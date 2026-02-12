@@ -1,0 +1,44 @@
+
+; Helper to format seconds as MM:SS
+format-time: fn { secs } {
+	; either void? secs [ return "??:??" ] [ ]
+	mins: to-integer secs / 60
+	s: mod ( secs .to-integer ) 60
+	join [ mins ": " either s < 10 { join [ "0" s ] } { s } ]
+}
+
+; Create and init player
+player: mpv
+|Set-option "vo" "null"
+|Set-option "vid" "no"
+|Init
+
+player |Load "https://ice4.somafm.com/groovesalad-256-mp3"
+
+print join [ "Playing: " to-string fix player .Path? { "--" } ]
+; Wait for stream to start
+sleep 2000
+
+; Show audio info (like: (+) Audio --aid=1 (mp3 2ch 44100Hz))
+audio: player .Audio-info?
+print join { "(+) Audio: " audio -> "codec" " " audio -> "channels" "ch " audio -> "samplerate" "Hz" }
+
+; Main status loop
+forever {
+	sleep 100
+	
+	pos:: player .Position?
+	cache-dur:: player .Cache-duration?
+	
+	; Format: A: 00:00:02 Cache: 16s
+	status:: join [ "A: " format-time pos " Cache: " to-integer cache-dur "s" ]
+	
+	; Show ICY title (current song) if available
+	
+	icy:: player .Icy-title? |fix { "" }
+	either icy = "" [ ] [
+		status:: join { status " | " icy }
+	]
+	
+	print status
+}

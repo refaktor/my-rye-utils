@@ -1,0 +1,11 @@
+player: mpv
+|Set-option "vo" "null"
+|Set-option "vid" "no"
+|Init
+
+player |Load "https://somafm.com/groovesalad256.pls"
+
+forever {
+	sleep 2000
+	print player .Media-title?
+}

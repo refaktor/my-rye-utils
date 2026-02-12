@@ -1,0 +1,88 @@
+
+format-time: fn { secs } {
+	mins: to-integer secs / 60
+	s: mod to-integer secs 60
+	join [ mins ":" either s < 10 { join [ "0" s ] } { s } ]
+}
+
+; Convert dB level (-60 to 0) to bar width
+db-to-level: fn { db max-width } {
+	level: to-integer ( ( db + 30 ) / 30.0 ) *  max-width
+	either level < 0 { 0 } { either level > max-width { max-width } { level } }
+}
+
+make-bar: fn { level max-width ltor } {
+	filled:: empty:: ""
+	loop level { filled:: join [ filled "|" ] }
+	loop max-width - level { empty:: join [ empty "░" ] }
+	join either ltor
+	{ [ "\e[92m" filled "\e[90m" empty "\e[0m" ] }
+	{ [ "\e[90m" empty "\e[92m" filled "\e[0m" ] }
+}
+
+select-stream: fn { tab } {
+	.display\custom fn { r c } {
+		prn either c = 1 { "\e[32m\e[1m>> \e[0m" } { "  " }  ,
+		prns join [ "\e[1m" ( "name" <- r ) "\e[0m" ]      ,
+		print join [ "\e[90m" ( "url" <- r ) "\e[0m" ]
+	}
+}
+
+Load\csv %streams.csv :streams
+
+rye .Args? .first |fix {
+	streams .select-stream -> "name"
+} :name
+
+streams |where-equal "name" name |column? "url" |first |fix {
+	print "Stream doesn't exist, select one ..."
+	streams .select-stream -> "url"
+} :url
+
+; create player
+player: mpv
+|Set-option "vo" "null"
+|Set-option "vid" "no"
+|Init\ipc                ; <-- use Init\ipc for audio level support
+
+; Set labeled filter - @mystats is the label we'll use to query levels
+player |Set-audio-filters "@mystats:lavfi=[astats=metadata=1:reset=1]"
+player |Load to-string url
+
+print "Waiting for stream..."
+sleep 3000
+
+audio: player .Audio-info? |fix { dict { } }
+print join [ "(+) Audio: " audio -> "codec" |fix { "?" } " " audio -> "channels" |fix { "?" } "ch " audio -> "samplerate" |fix { "?" } "Hz" ]
+print ""
+
+bar-width: 25
+
+forever {
+	sleep 50  ; ~20fps
+	
+	pos:: player .Position? |fix { 0.0 }
+	cache-dur:: player .Cache-duration? |fix { 0.0 }
+	
+	levels:: player .Audio-levels? "mystats" |fix { dict { } }
+
+	; get RMS levels (in dB, typically -60 to 0)
+	left-db:: levels -> "rms-left" |fix { -30.0 }
+	right-db:: levels -> "rms-right" |fix { -30.0 }
+	
+	left-level:: db-to-level left-db bar-width
+	right-level:: db-to-level right-db bar-width
+	
+	left-bar:: make-bar left-level bar-width false
+	right-bar:: make-bar right-level bar-width true
+	
+	status:: join [ left-bar "|L R|" right-bar "" ]
+	timer:: join [ "\e[100m" format-time pos " Cache: " to-integer cache-dur "\e[0m" ]
+	
+	icy:: player .Icy-title? |fix { "" }
+
+	prn join [ "\r " status "                           \e[B" ]
+	prn join [ "\r                                      \e[B" ]	
+	prn join [ "\r " timer " " icy "                    \e[2A" ]
+}
+print "Bye."

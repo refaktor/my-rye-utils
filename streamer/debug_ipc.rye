@@ -1,0 +1,29 @@
+; Debug script to test IPC audio levels
+
+print "Creating player with IPC..."
+player: mpv
+|Set-option "vo" "null"
+|Set-option "vid" "no"
+|Init\ipc
+
+print join [ "IPC socket path: " player .Ipc-path? ]
+
+player |Set-audio-filters "@mystats:lavfi=[astats=metadata=1:reset=1]"
+player |Load "https://ice4.somafm.com/groovesalad-256-mp3"
+
+print "Waiting 4 seconds for stream to start..."
+sleep 4000
+
+print join [ "IPC socket path: " player .Ipc-path? ]
+print ""
+print "Testing Audio-levels? (raw output)..."
+
+loop 5 {
+	print "---"
+	levels:: player .Audio-levels? "mystats" 
+	probe levels
+	sleep 1000
+}
+
+player |Terminate
+print "Done"
