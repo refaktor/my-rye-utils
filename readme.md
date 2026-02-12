@@ -3,7 +3,7 @@ Various utilities made in Rye. Also useful as working Rye examples.
 
 ## utils
 
-* **streamer (soon):**<br/>
+* **streamer:**<br/>
   https://www.reddit.com/r/ryelang/comments/1qz5ncj/tui_stream_music_player_in_one_page_of_rye/
 * **quick hn (soon):**<br/>
   display hacker news in terminal, quick filter
