@@ -1,10 +1,10 @@
 # Streamer
 
-Using mpv to stream and play music. Demo for standalone binaries and lrye, because mpv is not included in Rye by default.
+Using mpv to stream and play music. Demo for standalone binaries and lrye, because mpv is not included in Rye by default. These docs assume you use Linux. Mac should hopefully also work, or Windows with WSL.
 
 ## Project Local Rye
 
-To build local Rye with added mpv player libraries, you need to define `RYE_HOME` env variable. It helps if you add the base Rye executable or `rye/bin/` folder to your path. In `rye/bin` folder is a `l.rye` script which we will be using.
+To build local Rye with added mpv player libraries, you need to define `RYE_HOME` env variable. It helps if you add the base Rye executable or `rye/bin/` folder to your path. In `rye/bin` folder is a main `rye` binary and `l.rye` script, which we will be using.
 
 ```bash
 export RYE_HOME=/path/to/rye
@@ -52,3 +52,13 @@ l.rye build embed_main
 ```
 
 You will get a `./main` binary that will already run `main.rye`. You can move `./main` to another location (without `main.rye`) and it will work.
+
+
+## Plan
+
+We will make improved versions of the Player. This is still very minimal and crude.
+
+
+## Bing your own streams
+
+Just edit `streams.csv`.
